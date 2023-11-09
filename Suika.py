@@ -20,12 +20,14 @@ class Ball():
         self.shape.elasticity = 0.5
         self.shape.friction = 0.1
         self.is_dropped = False
+        self.shape.color = (255,255,255,255)
 
     def set_color(self, color: str):
         self.shape.color = (255, 255, 255, 255)
 
     def set_position(self, pos: tuple):
         self.body.position = pos
+
 
     def set_visible(self):
         global space
@@ -44,7 +46,7 @@ class Ball_args(IntEnum):
     NEXT_RADIUS = 5
     IS_DROPPING = 6
 
-
+#region game_ready
 SCREEN_SIZE = (800, 800)
 FPS = 165
 
@@ -107,6 +109,8 @@ random_int = random.choices(index, weights=skwed_probabitity, k=1)[0]
 next_ball_radius = order_radius[random_int]
 next_ball_color = order_color[random_int]
 
+#endregion
+
 while running:
     screen.fill(BLACK)
     clock.tick(FPS)
@@ -126,9 +130,10 @@ while running:
         elif event.type == pg.MOUSEBUTTONDOWN:
             if event.pos[0] > 40 and event.pos[0] < SCREEN_SIZE[0] - 40:
                 # draw a ball when mouse is clicked
-                ball = Ball()
                 x = event.pos[0]
-                y = min(event.pos[1], 20)
+                y = min(event.pos[1], 30)
+                ball = Ball(pos=(x,y), radius=next_ball_radius)
+                ball.set_color('test (white)')
                 ball.set_position((x, y))
                 ball.set_visible()
                 # horizontal_speed = 0
@@ -137,10 +142,17 @@ while running:
                 #              next_ball_color, next_ball_radius, is_dropping])
                 balls.append(ball)
                 print(f"Ball Append + {len(balls)}")
+                
                 next_index = random.choices(
                     index, weights=skwed_probabitity, k=1)[0]
                 next_ball_color = order_color[next_index]
                 next_ball_radius = order_radius[next_index]
+
+                space.remove(preview_ball.body, preview_ball.shape)
+                preview_ball = Ball(pos=(pg.mouse.get_pos()[0], 30),
+                                    radius=next_ball_radius, is_static=True)
+                preview_ball.set_visible()
+
 
     # check current position is valid
     for ball in balls:
@@ -180,6 +192,7 @@ while running:
                     running = False
     else:
         for i in range(len(balls)):
+            break
             for j in range(i+1, len(balls)):
                 # 85줄 append로 넘겨준 1차원 배열 요소 인덱스를 Ball_args enum 사용
                 dx = balls[i][Ball_args.X] - balls[j][Ball_args.X]
@@ -208,37 +221,12 @@ while running:
 
                     # if they touch but not of same color
                     else:
-                        # check overlap
-                        overlap = balls[i][Ball_args.NEXT_RADIUS] + \
-                            balls[j][Ball_args.NEXT_RADIUS] - distance
-                        dx = dx / distance
-                        dy = dy / distance
-                        balls[i][Ball_args.X] += dx * overlap / 2
-                        balls[i][Ball_args.Y] += dy * overlap / 2
-                        balls[j][Ball_args.X] -= dx * overlap / 2
-                        balls[j][Ball_args.Y] -= dy * overlap / 2
+                        # move naturally with Physics engine
+                        pass
+        
+        # add balls and remove balls
 
-                        # update speed of both balls when they collide
-                        # 밑에 더 있던 balls[][Ball_args.HORIZONTAL~] *= 1 지움
-                        balls[i][Ball_args.SPEED] = 0
-                        balls[j][Ball_args.SPEED] = 0
-
-                        # update the is_dropping flag
-                        balls[i][Ball_args.IS_DROPPING] = False
-                        balls[j][Ball_args.IS_DROPPING] = False
-
-        # remove and add balls
-        for ball in balls_to_remove:
-            if ball in balls:
-                balls.remove(ball)
-        for ball in balls_to_add:
-            balls.append(ball)
-
-        # empty the lists
-        balls_to_remove.clear()
-        balls_to_add.clear()
-
-        # draw balls
+        ''' draw balls
         for ball in balls:
             box_top = 40
             # if ball is not dropping and above the box, game over
@@ -270,8 +258,8 @@ while running:
                 ball[Ball_args.HORIZONTAL_SPEED] *= -0.5
             any_ball = pg.draw.circle(
                 screen, ball[Ball_args.NEXT_COLOR], (ball[Ball_args.X], ball[Ball_args.Y]), ball[Ball_args.NEXT_RADIUS])
-
-        # draw 3 lines to make a rectangle with upper side open
+'''
+        # line -> pymunk segment (upper)
         # pg.draw.line(screen, WHITE, (40, 40), (40, 720), 1)
         # pg.draw.line(screen, WHITE, (40, 720), (560, 720), 1)
         # pg.draw.line(screen, WHITE, (560, 720), (560, 40), 1)
