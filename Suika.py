@@ -25,6 +25,10 @@ THISTLE = (255, 0, 255)
 HOTPINK = (255, 105, 180)
 PURPLE = (128, 0, 128)
 
+IMG_PATH = './img/'
+IMG_FILENAME = ['H.png', 'He.png', 'Li.png',
+                'Be.png', 'B.png', 'C.png', 'N.png', 'O.png', 'F.png',]
+
 COLOR_ORDER: list = [WHITE, RED, ORANGE, YELLOW,
                      GREEN, BLUE, THISTLE, HOTPINK, PURPLE]
 SCORE_ORDER: list = [1, 2, 4, 8, 16, 32, 64, 128, 256]
@@ -54,13 +58,19 @@ class Game:
             # args
             self.color = pg.Color(color)
 
-            self.origin_image = pg.Surface(
-                (radius*2+2, radius*2+2), pg.SRCALPHA)
-            self.image = self.origin_image
+            if radius in RADIUS_ORDER:
+                idx = RADIUS_ORDER.index(radius)
+                self.link = IMG_PATH+IMG_FILENAME[idx]
+                self.image = pg.image.load(self.link)
+                self.image = pg.transform.scale(
+                    self.image, (radius*2, radius*2))
 
-            pg.draw.circle(self.image, self.color,
-                           (radius+1, radius+1), radius)
-            self.rect = self.image.get_rect(topleft=pos)
+            else:
+                print("Surface ERROR")
+
+            # pg.draw.circle(self.image, self.color, (radius+1, radius+1), radius)
+            # self.rect = self.image.get_rect(topleft=pos)# 임시 비활성화
+            self.rect = self.image.get_rect(center=flipy(pos))
 
             if is_static:
                 self.body = pm.Body(body_type=pm.Body.KINEMATIC)
@@ -72,7 +82,8 @@ class Game:
             self.shape = pm.Circle(body=self.body, radius=radius)
             self.shape.elasticity = 0
             self.shape.friction = 1
-            self.shape.color = self.color
+            # self.shape.color = self.color
+            self.shape.color = pg.Color(WHITE)
             self.space = space
             self.space.add(self.body, self.shape)
 
@@ -80,8 +91,8 @@ class Game:
             self.rect.center = flipy(self.body.position)
             # Use the body's angle to rotate the image.
             self.image = pg.transform.rotozoom(
-                self.origin_image, math.degrees(self.body.angle), 1)
-            self.rect = self.image.get_rect(center=self.rect.center)
+                self.image, math.degrees(self.body.angle), 1)
+            self.rect = self.image.get_rect(center=self.get_position())
 
         def get_radius(self):
             return self.shape.radius
@@ -133,13 +144,13 @@ class Game:
 
         self.wall_bottom = pm.Body(body_type=pm.Body.STATIC)
         self.wall_bottom_shape = pm.Segment(
-            self.wall_bottom, (50, SCREEN_SIZE[1]-50), (SCREEN_SIZE[0]-50, SCREEN_SIZE[1]-50), 3)
+            self.wall_bottom, (50, SCREEN_SIZE[1]-50), (SCREEN_SIZE[0]-50, SCREEN_SIZE[1]-50), 15)
         self.wall_left = pm.Body(body_type=pm.Body.STATIC)
         self.wall_right = pm.Body(body_type=pm.Body.STATIC)
         self.wall_left_shape = pm.Segment(
-            self.wall_left, (250, 100), (250, SCREEN_SIZE[1]-50), 3)
+            self.wall_left, (50, 100), (50, SCREEN_SIZE[1]-50), 15)
         self.wall_right_shape = pm.Segment(
-            self.wall_right, (SCREEN_SIZE[0]-50, 100), (SCREEN_SIZE[0]-50, SCREEN_SIZE[1]-50), 3)
+            self.wall_right, (SCREEN_SIZE[0]-50, 100), (SCREEN_SIZE[0]-50, SCREEN_SIZE[1]-50), 15)
         self.space.add(self.wall_left, self.wall_left_shape)
         self.space.add(self.wall_right, self.wall_right_shape)
         self.space.add(self.wall_bottom, self.wall_bottom_shape)
@@ -254,6 +265,7 @@ class Game:
                     return
 
     def draw(self):
+
         self.screen.fill(pg.Color(140, 120, 110))
         self.all_sprites.draw(self.screen)  # Draw the images of all sprites.
 
@@ -265,8 +277,10 @@ class Game:
                        (mouse_x, PREVIEW_BALL_OFFSET_Y), self.next_ball_radius)
 
         for ball in self.balls:
-            pg.draw.circle(self.screen, ball.get_color(),
-                           ball.get_position(), ball.get_radius())
+            pos = ball.get_position()
+            rect = ball.image.get_rect(center=pos)
+            # rect가 아니고 pos 였다가 위에 rect정의 해주니까
+            self.screen.blit(ball.image, rect)
 
         # color order draw
         colors_coord_y = SCREEN_SIZE[1] - 20
@@ -282,11 +296,11 @@ class Game:
                                       score_text.get_width()/2, 20))
         # bottom, left, right
         pg.draw.line(self.screen, WHITE,  (50,
-                     SCREEN_SIZE[1]-50), (SCREEN_SIZE[0]-50, SCREEN_SIZE[1]-50), 3)
-        pg.draw.line(self.screen, WHITE, (250, 100),
-                     (250, SCREEN_SIZE[1]-50), 3)
+                     SCREEN_SIZE[1]-50), (SCREEN_SIZE[0]-50, SCREEN_SIZE[1]-50), 15)
+        pg.draw.line(self.screen, WHITE, (50, 100),
+                     (50, SCREEN_SIZE[1]-50), 15)
         pg.draw.line(self.screen, WHITE,
-                     (SCREEN_SIZE[0]-50, 100), (SCREEN_SIZE[0]-50, SCREEN_SIZE[1]-50), 3)
+                     (SCREEN_SIZE[0]-50, 100), (SCREEN_SIZE[0]-50, SCREEN_SIZE[1]-50), 15)
 
         pg.display.flip()
 
